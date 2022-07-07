@@ -1,4 +1,6 @@
-import React from "react";
+import "./style.scss";
+
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { StorageHelpers } from "../../core/helpers";
 import { withTranslation } from "react-i18next";
@@ -6,15 +8,10 @@ import hoistStatics from "hoist-non-react-statics";
 
 import SvgIcon from "../svgicon";
 
-import "./style.scss";
+const ContentHeaderNotExtended = ({ t, icon, title, itemLength }) => {
+  const [recipesdisplay, setRecipesdisplay] = useState("grid");
 
-class ContentHeaderNotExtended extends React.Component {
-  state = {
-    recipesdisplay: "grid",
-  };
-
-  getItemLengthText = (itemLength) => {
-    const { t } = this.props;
+  const getItemLengthText = (itemLength) => {
     let text;
 
     if (0 === itemLength) {
@@ -28,54 +25,51 @@ class ContentHeaderNotExtended extends React.Component {
     return text;
   };
 
-  changeDisplay = (display) => {
+  const changeDisplay = (display) => {
     document.body.classList.remove("grid-display");
     document.body.classList.remove("imglist-display");
     document.body.classList.remove("simplelist-display");
     document.body.classList.add(`${display}-display`);
-    StorageHelpers.preference.set("recipesdisplay", display);
-    this.setState({ display });
+    setRecipesdisplay(display);
   };
 
-  render() {
-    const { t, icon, title, itemLength } = this.props;
-    const itemLengthText = this.getItemLengthText(itemLength);
+  const itemLengthText = getItemLengthText(itemLength);
 
-    return (
-      <div className="comp_content-header">
-        <div className="left-side">
-          <div className="title-header">
-            <SvgIcon name={icon} />
-            <div className="title">{t(title)}</div>
-          </div>
-          <div className="sub-text">{t(itemLengthText)}</div>
+  useEffect(() => {
+    StorageHelpers.preference.set("recipesdisplay", recipesdisplay);
+  }, [recipesdisplay]);
+
+  return (
+    <div className="comp_content-header">
+      <div className="left-side">
+        <div className="title-header">
+          <SvgIcon name={icon} />
+          <div className="title">{t(title)}</div>
         </div>
-        <div className="right-side">
-          <div className="icons-header">
-            <div
-              className="icon-wrapper"
-              onClick={() => this.changeDisplay("imglist")}
-            >
-              <SvgIcon name="imglist" />
-            </div>
-            <div
-              className="icon-wrapper"
-              onClick={() => this.changeDisplay("simplelist")}
-            >
-              <SvgIcon name="simplelist" />
-            </div>
-            <div
-              className="icon-wrapper"
-              onClick={() => this.changeDisplay("grid")}
-            >
-              <SvgIcon name="grid" />
-            </div>
+        <div className="sub-text">{t(itemLengthText)}</div>
+      </div>
+      <div className="right-side">
+        <div className="icons-header">
+          <div
+            className="icon-wrapper"
+            onClick={() => changeDisplay("imglist")}
+          >
+            <SvgIcon name="imglist" />
+          </div>
+          <div
+            className="icon-wrapper"
+            onClick={() => changeDisplay("simplelist")}
+          >
+            <SvgIcon name="simplelist" />
+          </div>
+          <div className="icon-wrapper" onClick={() => changeDisplay("grid")}>
+            <SvgIcon name="grid" />
           </div>
         </div>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 ContentHeaderNotExtended.propTypes = {
   icon: PropTypes.string,

@@ -1,49 +1,45 @@
-import React, { Component } from "react";
+import "./style.scss";
+
+import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import PropTypes from "prop-types";
 import { withTranslation } from "react-i18next";
 import hoistStatics from "hoist-non-react-statics";
 
-import "./style.scss";
-
-class ConfirmDialogNotExtended extends Component {
-  handleClickButton = (button) => {
+export const ConfirmDialogNotExtended = ({ t, title, text, buttons }) => {
+  const handleClickButton = (button) => {
     if (button.onClick) {
       button.onClick();
     }
     removeElementReconfirm();
   };
 
-  render() {
-    const { t, title, text, buttons } = this.props;
-
-    return (
-      <div className="comp_confirm-dialog">
-        <div className="confirm-dialog-content">
-          <div className="confirm-dialog-header">
-            <div className="title">{t(title)}</div>
-          </div>
-          <div className="confirm-dialog-body">
-            <div className="text">{t(text)}</div>
-          </div>
-          <div className="confirm-dialog-footer">
-            {buttons.map((button, index) => {
-              return (
-                <button
-                  key={index}
-                  onClick={() => this.handleClickButton(button)}
-                  className={button.className}
-                >
-                  {t(button.label)}
-                </button>
-              );
-            })}
-          </div>
+  return (
+    <div className="comp_confirm-dialog">
+      <div className="confirm-dialog-content">
+        <div className="confirm-dialog-header">
+          <div className="title">{t(title)}</div>
+        </div>
+        <div className="confirm-dialog-body">
+          <div className="text">{t(text)}</div>
+        </div>
+        <div className="confirm-dialog-footer">
+          {buttons.map((button, index) => {
+            return (
+              <button
+                key={index}
+                onClick={() => handleClickButton(button)}
+                className={button.className}
+              >
+                {t(button.label)}
+              </button>
+            );
+          })}
         </div>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 ConfirmDialogNotExtended.defaultProps = {
   buttons: [

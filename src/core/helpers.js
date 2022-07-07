@@ -20,12 +20,15 @@ import fs from "fs";
 import path from "path";
 
 const isWin = "win32" === platform();
+
 const defaultPath = isWin
   ? `${homedir()}\\${App.folderName}`
   : `${homedir()}/${App.folderName}`;
+
 const backupPath = isWin
   ? `${defaultPath}\\${App.backupFolderName}`
   : `${defaultPath}/${App.backupFolderName}`;
+
 const storagePreferences = new Store({
   name: "preferences",
   schema: {

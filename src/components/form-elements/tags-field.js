@@ -1,214 +1,256 @@
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import _ from 'lodash';
+import "./style.scss";
+import React, { useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
+import _ from "lodash";
 
-import {Keys} from '../../core/constants';
+import { Keys } from "../../core/constants";
 
-import './style.scss';
+const TagsField = ({
+  label,
+  info,
+  name,
+  placeholder,
+  value,
+  errorText,
+  onChangeText,
+  suggestions,
+}) => {
+  const [canDeletePrev, setCanDeletePrev] = useState(false);
+  const [autoSuggest, setAutoSuggest] = useState([]);
+  const [lastInputValue, setLastInputValue] = useState("");
 
-class TagsField extends Component {
-    state = {
-        canDeletePrev: false,
-        autoSuggest: []
-    };
-    lastInputValue = '';
+  const refContainer = useRef();
+  const refInput = useRef();
 
-    componentDidMount() {
-        this.refContainer.addEventListener( 'click', this.onFocusInput );
-        this.refInput.addEventListener( 'keyup', this.onKeyUpInput );
+  // componentDidMount() {
+  //     ;
+  //     this.;
+  // }
+
+  // componentWillUnmount() {
+  //     this.refContainer.removeEventListener( 'click', this.onFocusInput );
+  //     this.refInput.removeEventListener( 'keyup', this.onKeyUpInput );
+  // }
+
+  const onDeleteItem = (item) => {
+    const tags =
+      "" !== value && null !== value && undefined !== value
+        ? value.split(",")
+        : [];
+
+    tags.splice(tags.indexOf(item), 1);
+    onChangeText && onChangeText(tags.join(","));
+  };
+
+  const onFocusInput = () => refInput.focus();
+
+  const onKeyUpInput = (e) => {
+    e.preventDefault();
+
+    const inputTextValue = e.target.value;
+    const tags =
+      "" !== value && null !== value && undefined !== value
+        ? value.split(",")
+        : [];
+
+    if (e.keyCode === Keys.enter) {
+      if (
+        inputTextValue &&
+        "" !== inputTextValue &&
+        -1 === tags.indexOf(inputTextValue)
+      ) {
+        tags.push(inputTextValue);
+        onChangeText && onChangeText(tags.join(","));
+        e.target.value = "";
+        setCanDeletePrev(true);
+        setAutoSuggest([]);
+      }
+    } else if (e.keyCode === Keys.backspace) {
+      if (canDeletePrev && "" === inputTextValue && tags.length > 0) {
+        tags.pop();
+        onChangeText && onChangeText(tags.join(","));
+      }
+      if ("" === inputTextValue) {
+        e.target.value = "";
+        setCanDeletePrev(true);
+      }
+    } else if (e.keyCode === Keys.downArrow) {
+      let index = autoSuggest.findIndex((o) => o.isActive);
+      index = index + 1 === autoSuggest.length ? 0 : index + 1;
+
+      _.forEach(autoSuggest, (val, ix) => {
+        if (index === ix) {
+          val.isActive = true;
+          e.target.value = val.text;
+        } else {
+          val.isActive = false;
+        }
+      });
+
+      setAutoSuggest(...autoSuggest);
+    } else if (e.keyCode === Keys.upArrow) {
+      let index = autoSuggest.findIndex((o) => o.isActive);
+      index = index - 1 < 0 ? autoSuggest.length - 1 : index - 1;
+
+      _.forEach(autoSuggest, (val, ix) => {
+        if (index === ix) {
+          val.isActive = true;
+          e.target.value = val.text;
+        } else {
+          val.isActive = false;
+        }
+      });
+
+      setAutoSuggest(...autoSuggest);
     }
 
-    componentWillUnmount() {
-        this.refContainer.removeEventListener( 'click', this.onFocusInput );
-        this.refInput.removeEventListener( 'keyup', this.onKeyUpInput );
-    }
+    if (
+      e.keyCode !== Keys.downArrow &&
+      e.keyCode !== Keys.upArrow &&
+      e.keyCode !== Keys.enter
+    ) {
+      setLastInputValue(inputTextValue);
 
-    onDeleteItem = item => {
-        const { value, onChangeText } = this.props;
-        const tags = '' !== value && null !== value && undefined !== value ? value.split( ',' ) : [];
-
-        tags.splice( tags.indexOf( item ), 1 );
-        onChangeText && onChangeText( tags.join( ',' ) );
-    };
-
-    onFocusInput = () => this.refInput.focus();
-
-    onKeyUpInput = e => {
-        e.preventDefault();
-
-        const { value, onChangeText, suggestions } = this.props;
-        const { canDeletePrev, autoSuggest } = this.state;
-
-        const inputTextValue = e.target.value;
-        const tags = '' !== value && null !== value && undefined !== value ? value.split( ',' ) : [];
-
-        if ( e.keyCode === Keys.enter ) {
-            if ( inputTextValue && '' !== inputTextValue && -1 === tags.indexOf( inputTextValue ) ) {
-                tags.push( inputTextValue );
-                onChangeText && onChangeText( tags.join( ',' ) );
-                e.target.value = '';
-                this.setState( { autoSuggest: [], canDeletePrev: true } );
-            }
-        } else if ( e.keyCode === Keys.backspace ) {
-            if ( canDeletePrev && '' === inputTextValue && tags.length > 0 ) {
-                tags.pop();
-                onChangeText && onChangeText( tags.join( ',' ) );
-            }
-            if ( '' === inputTextValue ) {
-                this.setState( { canDeletePrev: true } );
-            }
-        } else if ( e.keyCode === Keys.downArrow ) {
-            let index = autoSuggest.findIndex( o => o.isActive );
-            index = index + 1 === autoSuggest.length ? 0 : index + 1;
-
-            _.forEach( autoSuggest, ( val, ix ) => {
-                if ( index === ix ) {
-                    val.isActive = true;
-                    e.target.value = val.text;
-                } else {
-                    val.isActive = false;
-                }
+      if ("" !== inputTextValue) {
+        const autoSuggests = [];
+        _.forEach(suggestions, (val) => {
+          if (val.indexOf(inputTextValue) > -1 && value.indexOf(val) === -1) {
+            autoSuggests.push({
+              text: val,
+              isActive: false,
             });
-
-            this.setState( { autoSuggest } );
-        } else if ( e.keyCode === Keys.upArrow ) {
-            let index = autoSuggest.findIndex( o => o.isActive );
-            index = index - 1 < 0 ? autoSuggest.length - 1 : index - 1;
-
-            _.forEach( autoSuggest, ( val, ix ) => {
-                if ( index === ix ) {
-                    val.isActive = true;
-                    e.target.value = val.text;
-                } else {
-                    val.isActive = false;
-                }
-            });
-
-            this.setState( { autoSuggest } );
-        }
-
-        if ( e.keyCode !== Keys.downArrow && e.keyCode !== Keys.upArrow && e.keyCode !== Keys.enter ) {
-            this.lastInputValue = inputTextValue;
-
-            if ( '' !== inputTextValue ) {
-                const autoSuggests = [];
-                _.forEach( suggestions, ( val ) => {
-                    if ( val.indexOf( inputTextValue ) > -1 && value.indexOf( val ) === -1 ) {
-                        autoSuggests.push({
-                            text: val,
-                            isActive: false
-                        });
-                    }
-                });
-                this.setState( { autoSuggest: autoSuggests, canDeletePrev: false } );
-            } else {
-                this.setState( { autoSuggest: [], canDeletePrev: true } );
-            }
-        }
-    };
-
-    onClickAutoSuggestItem = text => {
-        const { value, onChangeText } = this.props;
-        const tags = '' !== value && null !== value && undefined !== value ? value.split( ',' ) : [];
-
-        if ( tags.indexOf( text ) === -1 ) {
-            this.refInput.value = '';
-            tags.push( text );
-            onChangeText && onChangeText( tags.join( ',' ) );
-            this.setState( { autoSuggest: [], canDeletePrev: true } );
-        }
-    };
-
-    boldQuery = ( str ) => {
-        const n = str.toUpperCase();
-        const q = this.lastInputValue.toUpperCase();
-        const x = n.indexOf( q );
-        if ( ! q || x === -1 ) {
-            return str;
-        }
-        const l = q.length;
-        return `${str.substr( 0, x )}<b>${str.substr( x, l )}</b>${str.substr( x + l )}`;
-    };
-
-    render() {
-        const { label, info, name, placeholder, value, errorText } = this.props;
-        const { autoSuggest } = this.state;
-        const tags = '' !== value && null !== value && undefined !== value ? value.split( ',' ) : [];
-
-        let formGroupClassName = 'form-group';
-        if ( '' !== errorText ) {
-            formGroupClassName += ' has-error';
-        }
-
-        return (
-            <div className='comp_fe_tags-field'>
-                <div className={formGroupClassName}>
-                    <div className='title-area'>
-                        { '' !== label ? <label className='form-label' htmlFor={name}>{label}</label> : null}
-                        { '' !== info ? <label className='info-text' htmlFor={name}>{info}</label> : null}
-                    </div>
-
-                    <div ref={ref => this.refContainer = ref} className='tags-input-main-container'>
-                        {
-                            tags.map( ( val, index ) => {
-                                return (
-                                    <div key={index} className='tag-wrapper'>
-                                        <span className='tag-text'>{val}</span>
-                                        <span onClick={() => this.onDeleteItem( val )} className='close-link'><span>×</span></span>
-                                    </div>
-                                );
-                            })
-                        }
-                        <div className='input-container'>
-                            <input
-                                ref={ref => this.refInput = ref}
-                                type='text' className='form-element'
-                                placeholder={placeholder} id={name}
-                            />
-                            {
-                                autoSuggest.length > 0 ?
-                                    (
-                                        <div className='auto-suggestion-container'>
-                                            <ul>
-                                                {
-                                                    autoSuggest.map( ( value, index ) => {
-                                                        return (
-                                                            <li onClick={() => this.onClickAutoSuggestItem( value.text )}
-                                                                className={value.isActive ? 'active' : ''} key={index}
-                                                                dangerouslySetInnerHTML={ { __html: this.boldQuery( value.text ) } }
-                                                            >
-                                                            </li>
-                                                        );
-                                                    })
-                                                }
-                                            </ul>
-                                        </div>
-                                    )
-                                    : null
-                            }
-                        </div>
-                    </div>
-                    { '' !== errorText ? <label className='error-label' htmlFor={name}>{errorText}</label> : null}
-                </div>
-            </div>
-        );
+          }
+        });
+        setAutoSuggest(...autoSuggest);
+        setCanDeletePrev(false);
+      } else {
+        setAutoSuggest([]);
+        setCanDeletePrev(true);
+      }
     }
-}
+  };
+
+  const onClickAutoSuggestItem = (text) => {
+    const { value, onChangeText } = text;
+    const tags =
+      "" !== value && null !== value && undefined !== value
+        ? value.split(",")
+        : [];
+
+    if (tags.indexOf(text) === -1) {
+      refInput.value = "";
+      tags.push(text);
+      onChangeText && onChangeText(tags.join(","));
+      setCanDeletePrev(true);
+      setAutoSuggest([]);
+    }
+  };
+
+  const boldQuery = (str) => {
+    const n = str.toUpperCase();
+    const q = lastInputValue.toUpperCase();
+    const x = n.indexOf(q);
+    if (!q || x === -1) {
+      return str;
+    }
+    const l = q.length;
+    return `${str.substr(0, x)}<b>${str.substr(x, l)}</b>${str.substr(x + l)}`;
+  };
+
+  const tags =
+    "" !== value && null !== value && undefined !== value
+      ? value.split(",")
+      : [];
+
+  let formGroupClassName = "form-group";
+  if ("" !== errorText) {
+    formGroupClassName += " has-error";
+  }
+
+  //   useEffect(() => {
+  //     refContainer.addEventListener("click", onFocusInput);
+  //     refInput.addEventListener("keyup", onKeyUpInput);
+  //   }, [onKeyUpInput]);
+
+  return (
+    <div className="comp_fe_tags-field">
+      <div className={formGroupClassName}>
+        <div className="title-area">
+          {"" !== label ? (
+            <label className="form-label" htmlFor={name}>
+              {label}
+            </label>
+          ) : null}
+          {"" !== info ? (
+            <label className="info-text" htmlFor={name}>
+              {info}
+            </label>
+          ) : null}
+        </div>
+
+        <div ref={(ref) => refContainer} className="tags-input-main-container">
+          {tags.map((val, index) => {
+            return (
+              <div key={index} className="tag-wrapper">
+                <span className="tag-text">{val}</span>
+                <span onClick={() => onDeleteItem(val)} className="close-link">
+                  <span>×</span>
+                </span>
+              </div>
+            );
+          })}
+          <div className="input-container">
+            <input
+              ref={(ref) => refInput}
+              type="text"
+              className="form-element"
+              placeholder={placeholder}
+              id={name}
+            />
+            {autoSuggest.length > 0 ? (
+              <div className="auto-suggestion-container">
+                <ul>
+                  {autoSuggest.map((value, index) => {
+                    return (
+                      <li
+                        onClick={() => onClickAutoSuggestItem(value.text)}
+                        className={value.isActive ? "active" : ""}
+                        key={index}
+                        dangerouslySetInnerHTML={{
+                          __html: boldQuery(value.text),
+                        }}
+                      ></li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
+        {"" !== errorText ? (
+          <label className="error-label" htmlFor={name}>
+            {errorText}
+          </label>
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 TagsField.defaultProps = {
-    errorText: '',
-    info: '',
-    label: ''
+  errorText: "",
+  info: "",
+  label: "",
 };
 
 TagsField.propTypes = {
-    info: PropTypes.string,
-    name: PropTypes.string.isRequired,
-    placeholder: PropTypes.string,
-    value: PropTypes.string,
-    onChangeText: PropTypes.func,
-    errorText: PropTypes.string,
-    suggestions: PropTypes.array
+  info: PropTypes.string,
+  name: PropTypes.string.isRequired,
+  placeholder: PropTypes.string,
+  value: PropTypes.string,
+  onChangeText: PropTypes.func,
+  errorText: PropTypes.string,
+  suggestions: PropTypes.array,
 };
 
 export default TagsField;
